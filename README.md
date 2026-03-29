@@ -131,6 +131,5 @@ Generator → Driver → DUT → Monitor → Scoreboard
 
 * SystemVerilog simulator (VCS, Questa, Xcelium, etc.)
 
-## License
 
 Free to use for learning and educational purposes
