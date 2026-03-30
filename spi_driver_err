@@ -1,0 +1,53 @@
+class spi_driver_err;
+
+    virtual spi_if vif;
+    mailbox #(spi_transaction) gen2drv;
+
+    rand bit inject_mosi_error;
+    rand bit inject_clk_glitch;
+    rand bit inject_cs_glitch;
+
+    function new(virtual spi_if vif, mailbox #(spi_transaction) gen2drv);
+        this.vif = vif;
+        this.gen2drv = gen2drv;
+    endfunction
+
+    task run();
+        spi_transaction tr;
+        forever
+        begin
+            gen2drv.get(tr);
+            assert(this.randomize());
+            drive(tr);
+        end
+    endtask
+
+    task drive(spi_transaction tr);
+
+        vif.cs <= 0;
+
+        for (int i = 7; i >= 0; i--)
+        begin
+            vif.mosi <= tr.data[i];
+
+            if (inject_mosi_error && $urandom_range(0,10) > 7)
+                vif.mosi <= ~tr.data[i];
+
+            vif.sclk <= 0;
+            @(posedge vif.clk);
+
+            if (inject_clk_glitch)
+                vif.sclk <= ~vif.sclk;
+
+            vif.sclk <= 1;
+            @(posedge vif.clk);
+
+            if (inject_cs_glitch && i == 3)
+                vif.cs <= 1;
+        end
+
+        vif.cs <= 1;
+
+    endtask
+
+endclass
